@@ -14,11 +14,27 @@ movies_path = BASE_DIR / "Downloads" / "movies.csv"
 
 @st.cache_data
 def load_data():
+    #ratings = pd.read_csv(ratings_path)
+    #movies = pd.read_csv(movies_path)
+    #return ratings, movies
+    
+    # Load raw data
     ratings = pd.read_csv(ratings_path)
     movies = pd.read_csv(movies_path)
+
+    # Count ratings per user
+    user_counts = ratings['userId'].value_counts()
+
+    # Keep only users with <= 1000 ratings
+    valid_users = user_counts[user_counts <= 1000].index
+    ratings = ratings[ratings['userId'].isin(valid_users)]
+
     return ratings, movies
 
-ratings, movies = load_data()
+
+with st.spinner("Loading and filtering data: This will take 10-20 seconds"):
+    ratings, movies = load_data()
+
 
 # ----------------------------
 # Session state for favorites
@@ -29,7 +45,7 @@ if "favorites" not in st.session_state:
 # ----------------------------
 # UI for selecting favorite movies
 # ----------------------------
-st.title("🎬 Movie Recommendation App")
+st.title("Movie Recommendation App")
 
 search_string = st.text_input("Search for a movie title:")
 
@@ -37,7 +53,7 @@ if search_string:
     matches = movies[movies['title'].str.lower().str.contains(search_string.lower())]
 
     if not matches.empty:
-        selected = st.selectbox("Select a movie from results:", matches['title'].head(20))
+        selected = st.selectbox("Select a movie from results (4 total):", matches['title'].head(20))
         if st.button("➕ Add to Favorites"):
             if selected:
                 if len(st.session_state.favorites) < 4:
@@ -51,7 +67,7 @@ if search_string:
 # Show selected favorites
 # ----------------------------
 if st.session_state.favorites:
-    st.subheader("Your Favorite Movies (max 4):")
+    st.subheader("Your Favorite Movies:")
     fav_df = pd.DataFrame(
         list(st.session_state.favorites.items()),
         columns=["Title", "Rating"]
@@ -146,5 +162,5 @@ if len(st.session_state.favorites) == 4:
     recommendations['title'] = recommendations['title'].apply(fix_title)
 
     # Show recommendations
-    st.subheader("🎯 Top 25 Recommended Movies for You:")
+    st.subheader("🎯 Top Recommended Movies for You:")
     st.dataframe(recommendations.head(25))
