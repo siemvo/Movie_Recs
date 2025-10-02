@@ -68,11 +68,18 @@ if search_string:
 # ----------------------------
 if st.session_state.favorites:
     st.subheader("Your Favorite Movies:")
-    fav_df = pd.DataFrame(
-        list(st.session_state.favorites.items()),
-        columns=["Title", "Rating"]
-    )
-    st.table(fav_df)
+
+    # Display each favorite with a remove button
+    for title, rating in list(st.session_state.favorites.items()):
+        col1, col2 = st.columns([4,1])
+        with col1:
+            #st.write(f" {title} (Rating: {rating})")
+            st.write(f" {title}")
+        with col2:
+            if st.button(f"❌ Remove", key=f"remove_{title}"):
+                del st.session_state.favorites[title]
+                st.rerun()  # Refresh to update recommendations
+
 
 # ----------------------------
 # Build recommendations when 4 movies selected
