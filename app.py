@@ -14,10 +14,6 @@ movies_path = BASE_DIR / "Downloads" / "movies.csv"
 
 @st.cache_data
 def load_data():
-    #ratings = pd.read_csv(ratings_path)
-    #movies = pd.read_csv(movies_path)
-    #return ratings, movies
-    
     # Load raw data
     ratings = pd.read_csv(ratings_path)
     movies = pd.read_csv(movies_path)
@@ -36,15 +32,11 @@ with st.spinner("Loading and filtering data: This will take 10-20 seconds"):
     ratings, movies = load_data()
 
 
-# ----------------------------
-# Session state for favorites
-# ----------------------------
+# Favorite movies in session state
 if "favorites" not in st.session_state:
     st.session_state.favorites = {}  # {title: rating}
 
-# ----------------------------
-# UI for selecting favorite movies
-# ----------------------------
+# Movie search and selection
 st.title("Movie Recommendation App")
 
 search_string = st.text_input("Search for a movie title:")
@@ -63,9 +55,7 @@ if search_string:
     else:
         st.warning("No matches found.")
 
-# ----------------------------
 # Show selected favorites
-# ----------------------------
 if st.session_state.favorites:
     st.subheader("Your Favorite Movies:")
 
@@ -73,7 +63,6 @@ if st.session_state.favorites:
     for title, rating in list(st.session_state.favorites.items()):
         col1, col2 = st.columns([4,1])
         with col1:
-            #st.write(f" {title} (Rating: {rating})")
             st.write(f" {title}")
         with col2:
             if st.button(f"❌ Remove", key=f"remove_{title}"):
@@ -81,9 +70,9 @@ if st.session_state.favorites:
                 st.rerun()  # Refresh to update recommendations
 
 
-# ----------------------------
+# --------------------------------------------
 # Build recommendations when 4 movies selected
-# ----------------------------
+# --------------------------------------------
 if len(st.session_state.favorites) == 4:
     st.subheader("🔍 Generating recommendations...")
 
@@ -119,7 +108,7 @@ if len(st.session_state.favorites) == 4:
         if title in movie_title_to_id and movie_title_to_id[title] in movie_to_idx
     ]
 
-    # Select only users who rated at least one favorite (sparse-safe)
+    # Select only users who rated at least one favorite
     mask = np.array((user_item_matrix[:, my_rated_movies] > 0).sum(axis=1)).flatten() > 0
     relevant_users_matrix = user_item_matrix[mask, :]
 
@@ -129,9 +118,9 @@ if len(st.session_state.favorites) == 4:
     similar_users_df = pd.DataFrame({'userId': relevant_user_ids, 'similarity': similarities})
     similar_users_df = similar_users_df.sort_values(by='similarity', ascending=False)  # exact match with notebook
 
-    # ----------------------------
-    # Recommendation
-    # ----------------------------
+    # --------------------------------------------
+    # Recommendation based on top 25 similar users
+    # --------------------------------------------
     top_users = similar_users_df.head(25)['userId'].values
     top_users_ratings = filtered_data[filtered_data['userId'].isin(top_users)]
 
